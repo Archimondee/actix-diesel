@@ -1,5 +1,5 @@
 use crate::{
-    common::dtos::create_user_dto::CreateUserDto,
+    common::dtos::{create_user_dto::CreateUserDto, login_user_dto::LoginUserDto},
     infrastructure::db::connection::DbPool,
     utils::{
         check_connection::check_connection,
@@ -53,6 +53,45 @@ impl AuthService {
                     None,
                 );
                 Ok(status_response(StatusCode::CREATED.as_u16(), response).unwrap())
+            }
+            Err(e) => {
+                let response = create_response(&e.message, e.status, Some({}), None, e.error);
+                Ok(status_response(e.status, response).unwrap())
+            }
+        }
+    }
+
+    pub async fn login_user(
+        payload: web::Json<LoginUserDto>,
+        pool: web::Data<DbPool>,
+    ) -> Result<HttpResponse, Error> {
+        match payload.validate() {
+            Ok(()) => (),
+            Err(e) => {
+                let response: ApiResponse<()> = create_response(
+                    "Validation Error",
+                    StatusCode::UNPROCESSABLE_ENTITY.as_u16(),
+                    None,
+                    None,
+                    Some(format_validation_errors(&e)),
+                );
+
+                return Ok(HttpResponse::UnprocessableEntity().json(response));
+            }
+        }
+
+        let mut conn = check_connection(pool);
+
+        let user_dto = LoginUserDto {
+            username: payload.username.clone(),
+            password: payload.password.clone(),
+        };
+
+        match user_dto.handle(&mut conn) {
+            Ok(user) => {
+                let response =
+                    create_response("Success", StatusCode::OK.as_u16(), Some(user), None, None);
+                Ok(status_response(StatusCode::OK.as_u16(), response).unwrap())
             }
             Err(e) => {
                 let response = create_response(&e.message, e.status, Some({}), None, e.error);

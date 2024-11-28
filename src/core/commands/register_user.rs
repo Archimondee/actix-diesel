@@ -16,15 +16,14 @@ use crate::{
 };
 
 impl CreateUserDto {
-    #[allow(dead_code)]
     pub fn handle(
         &self,
         conn: &mut PooledConnection<diesel::r2d2::ConnectionManager<SqliteConnection>>,
     ) -> Result<AuthVms, ApiError> {
-        conn.transaction(|txn_conn| {
-            use crate::infrastructure::schema::schema::auths::dsl::*;
-            use crate::infrastructure::schema::schema::users::dsl::*;
+        use crate::infrastructure::schema::schema::auths::dsl::*;
+        use crate::infrastructure::schema::schema::users::dsl::*;
 
+        conn.transaction(|txn_conn| {
             let query = auths.filter(username.eq(&self.username));
             if let Some(_) = log_query(query, || query.first::<Auth>(txn_conn).optional()).unwrap()
             {
