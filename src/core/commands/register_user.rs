@@ -11,49 +11,57 @@ use crate::{
         dtos::create_user_dto::CreateUserDto,
         vms::{auth_vm::AuthVms, user_vm::UserVms},
     },
-    core::entities::{auth_entities::Auth, user_entities::User},
+    core::{
+        aggregator::Aggregator,
+        entities::{auth_entities::Auth, user_entities::User},
+    },
     utils::{log_query, response::ApiError},
 };
 
-impl CreateUserDto {
-    pub fn handle(
+impl Aggregator<AuthVms> for CreateUserDto {
+    fn handle(
         &self,
         conn: &mut PooledConnection<diesel::r2d2::ConnectionManager<SqliteConnection>>,
-    ) -> Result<AuthVms, ApiError> {
+    ) -> Result<Option<AuthVms>, ApiError> {
         use crate::infrastructure::schema::schema::auths::dsl::*;
         use crate::infrastructure::schema::schema::users::dsl::*;
 
         conn.transaction(|txn_conn| {
             let query = auths.filter(username.eq(&self.username));
-            if let Some(_) = log_query(query, || query.first::<Auth>(txn_conn).optional()).unwrap()
-            {
-                let response = ApiError {
+            let username_exists = log_query(query, || query.first::<Auth>(txn_conn).optional())?;
+
+            if username_exists.is_some() {
+                return Err(ApiError {
                     message: "Username already exists".to_string(),
                     status: StatusCode::UNPROCESSABLE_ENTITY.as_u16(),
                     error: None,
-                };
-                return Err(response);
+                });
             }
 
             let query = users.filter(email.eq(&self.email));
-            if let Some(_) = log_query(query, || query.first::<User>(txn_conn).optional()).unwrap()
-            {
-                let response = ApiError {
+            let email_exists = log_query(query, || query.first::<User>(txn_conn).optional())?;
+
+            if email_exists.is_some() {
+                return Err(ApiError {
                     message: "Email already exists".to_string(),
                     status: StatusCode::UNPROCESSABLE_ENTITY.as_u16(),
                     error: None,
-                };
-                return Err(response);
+                });
             }
 
-            let hashed_password = hash(&self.password, DEFAULT_COST).unwrap();
+            let hashed_password = hash(&self.password, DEFAULT_COST).map_err(|err| ApiError {
+                message: format!("Password hashing error: {}", err),
+                status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+                error: None,
+            })?;
+
             let auth = Auth::new(&self.username, &hashed_password);
             let query = diesel::insert_into(auths).values(&auth);
-            let _ = log_query(query, || query.execute(txn_conn));
+            log_query(query, || query.execute(txn_conn))?;
 
             let user = User::new(&auth.id, &self.firstname, &self.lastname, &self.email);
             let query = diesel::insert_into(users).values(&user);
-            let _ = log_query(query, || query.execute(txn_conn));
+            log_query(query, || query.execute(txn_conn))?;
 
             let data = AuthVms {
                 id: auth.id,
@@ -67,7 +75,7 @@ impl CreateUserDto {
                 },
             };
 
-            return Ok(data);
+            Ok(Some(data))
         })
     }
 }

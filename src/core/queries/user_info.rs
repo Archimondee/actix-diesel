@@ -5,17 +5,15 @@ use diesel::{Connection, ExpressionMethods, SqliteConnection};
 use r2d2::PooledConnection;
 
 use crate::common::vms::user_vm::UserVms;
+use crate::core::aggregator::Aggregator;
 use crate::utils::log_query;
-use crate::{
-    common::vms::auth_vm::{AuthTrait, AuthVms},
-    utils::response::ApiError,
-};
+use crate::{common::vms::auth_vm::AuthVms, utils::response::ApiError};
 
 pub struct UserInfo {
     pub auth_id_user: String,
 }
 
-impl AuthTrait for UserInfo {
+impl Aggregator<AuthVms> for UserInfo {
     fn handle(
         &self,
         conn: &mut PooledConnection<diesel::r2d2::ConnectionManager<SqliteConnection>>,

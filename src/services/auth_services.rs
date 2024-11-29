@@ -1,5 +1,6 @@
 use crate::{
     common::dtos::{create_user_dto::CreateUserDto, login_user_dto::LoginUserDto},
+    core::aggregator::Aggregator,
     infrastructure::db::connection::DbPool,
     utils::{
         check_connection::check_connection,

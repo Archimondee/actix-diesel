@@ -1,12 +1,11 @@
-use actix_web::http::StatusCode;
-use actix_web::{web, Error, HttpMessage, HttpRequest, HttpResponse};
-
-use crate::common::vms::auth_vm::AuthTrait;
+use crate::core::aggregator::Aggregator;
 use crate::core::queries::user_info::UserInfo;
 use crate::utils::check_connection::check_connection;
 use crate::utils::jwt::Claims;
 use crate::utils::status_response::status_response;
 use crate::{infrastructure::db::connection::DbPool, utils::response::create_response};
+use actix_web::http::StatusCode;
+use actix_web::{web, Error, HttpMessage, HttpRequest, HttpResponse};
 
 pub struct UserService {}
 
