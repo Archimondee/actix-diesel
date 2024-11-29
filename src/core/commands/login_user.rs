@@ -5,7 +5,10 @@ use crate::{
         dtos::login_user_dto::LoginUserDto,
         vms::{login_vm::LoginVms, token_vm::Token, user_vm::UserVms},
     },
-    core::entities::{auth_entities::Auth, user_entities::User},
+    core::{
+        aggregator::Aggregator,
+        entities::{auth_entities::Auth, user_entities::User},
+    },
     utils::{jwt::create_jwt, log_query, response::ApiError},
 };
 
@@ -16,11 +19,11 @@ use diesel::{
 };
 use r2d2::PooledConnection;
 
-impl LoginUserDto {
-    pub fn handle(
+impl Aggregator<LoginVms> for LoginUserDto {
+    fn handle(
         &self,
         conn: &mut PooledConnection<diesel::r2d2::ConnectionManager<SqliteConnection>>,
-    ) -> Result<LoginVms, ApiError> {
+    ) -> Result<Option<LoginVms>, ApiError> {
         use crate::infrastructure::schema::schema::auths::dsl::*;
         use crate::infrastructure::schema::schema::users::dsl::*;
 
@@ -56,27 +59,27 @@ impl LoginUserDto {
                                 email: user.email,
                             },
                         };
-                        Ok(login)
+                        Ok(Some(login))
                     } else {
-                        Err(ApiError {
+                        return Err(ApiError {
                             message: "Wrong username or password".to_string(),
                             error: None,
                             status: 200,
-                        })
+                        });
                     }
                 } else {
-                    Err(ApiError {
+                    return Err(ApiError {
                         message: "Wrong username or password".to_string(),
                         error: None,
                         status: 200,
-                    })
+                    });
                 }
             } else {
-                Err(ApiError {
+                return Err(ApiError {
                     message: "Wrong username or password".to_string(),
                     error: None,
                     status: 200,
-                })
+                });
             }
         })
     }

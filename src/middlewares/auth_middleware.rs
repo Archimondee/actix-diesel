@@ -18,13 +18,11 @@ pub async fn auth_middleware(
     if let Some(auth_header) = req.headers().get("Authorization") {
         if let Ok(auth_str) = auth_header.to_str() {
             if auth_str.starts_with("Bearer ") {
-                let token = &auth_str[7..]; // Strip "Bearer " prefix
+                let token = &auth_str[7..];
 
                 match decode_jwt(token, &env::var("SECRET_KEY").unwrap()) {
                     Ok(token_data) => {
-                        // Attach claims to request extensions
                         req.extensions_mut().insert(token_data);
-
                         return next.call(req).await;
                     }
                     Err(_) => {
