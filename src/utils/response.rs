@@ -4,8 +4,9 @@ use super::meta::Meta;
 use diesel::result::Error as DieselError;
 use serde::{self, Serialize};
 use serde_json::Value;
+use utoipa::ToSchema;
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct ApiResponse<T: Serialize> {
     pub message: String,
     pub status: u16,
@@ -34,7 +35,7 @@ pub fn create_response<T: Serialize>(
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct ApiError {
     pub message: String,
     pub error: Option<Value>,

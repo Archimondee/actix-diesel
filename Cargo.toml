@@ -24,6 +24,8 @@ diesel_logger = "0.4"
 futures = "0.3"
 actix-service = "2.0.2"
 futures-util = "0.3.31"
+utoipa = { version = "5", features = ["actix_extras"] }
+utoipa-swagger-ui = { version = "8", features = ["actix-web"] }
 
 
 [dependencies.actix-session]

@@ -1,7 +1,8 @@
 use serde::Deserialize;
+use utoipa::ToSchema;
 use validator::Validate;
 
-#[derive(Deserialize, Validate, Clone)]
+#[derive(Deserialize, Validate, Clone, ToSchema)]
 pub struct CreateUserDto {
     #[validate(length(min = 3, message = "Username must be at least 3 character long"))]
     pub username: String,

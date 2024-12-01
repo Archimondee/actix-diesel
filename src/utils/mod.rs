@@ -6,6 +6,7 @@ pub mod meta;
 pub mod not_found;
 pub mod response;
 pub mod status_response;
+pub mod swagger;
 pub mod validation_errors;
 
 pub use cors::cors;
